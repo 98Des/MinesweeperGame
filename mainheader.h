@@ -70,7 +70,7 @@ INT iBoxesMinWidth = 10;
 INT iBoxesMaxHeight = 24;
 INT iBoxesMaxWidth = 30;
 INT iBoxSize = 25;
-INT iActualDistBetweenBoxes = 1;
+INT iActualDistBetweenBoxes = 3;
 
 INT iWindowHeight{};
 INT iWindowWidth{};
@@ -83,12 +83,16 @@ FLOAT fCurrentTime = 0.0f;
 //----------------------------------------------------------------
 // Forward declarations of functions included in this code module
 ATOM                RegisterClasses(HINSTANCE hInstance);
+ATOM				RegisterMainClass(HINSTANCE hInstance);
+ATOM				RegisterChildClass(HINSTANCE hInstance);
+ATOM				RegisterDialogClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 BOOL				CreateNewChildren(HWND**&, HWND, INT, INT, INT, INT, INT);
 BOOL				CreateNewTileSet(Tile**&, INT, INT);
 BOOL				CreateNewDialogWindow();
 void				WriteTextOnScreen(HWND);
 void				UpdateFlagText(HWND, INT);
+void				TimerRoutine(HWND hWnd, WPARAM wParam);
 POINT				GetCenterOfScreenPosition(INT, INT, INT);
 INT					CalculateWindowHeight(INT, INT, INT, INT);
 INT					CalculateWindowWidth(INT, INT, INT);
@@ -111,8 +115,8 @@ void NewGame(INT, INT, BOOL);
 
 BOOL CreateNewMainWindow(HINSTANCE hInstance, HWND& hWnd, int nCmdShow);
 
-ATOM RegisterMainClass(HINSTANCE hInstance);
-ATOM RegisterChildClass(HINSTANCE hInstance);
-ATOM RegisterDialogClass(HINSTANCE hInstance);
 
-void TimerRoutine(HWND hWnd, WPARAM wParam);
+void GameWon(HWND hWnd, INT_PTR timerId);
+void GameWonUnfair(HWND hWnd, INT_PTR timerId);
+void GameLost(HWND hWnd, INT_PTR timerId);
+void RevealAllBombs();

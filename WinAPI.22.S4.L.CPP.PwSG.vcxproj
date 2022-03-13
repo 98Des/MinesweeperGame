@@ -24,6 +24,7 @@
     <ProjectGuid>{13e84880-4662-4d6a-932d-3db3ab5bff53}</ProjectGuid>
     <RootNamespace>WinAPI22S4LCPPPwSG</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>MinesweeperGame</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -142,20 +143,20 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="WinAPI.22.S4.L.CPP.PwSG.h" />
+    <ClInclude Include="mainheader.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="WinAPI.22.S4.L.CPP.PwSG.cpp" />
+    <ClCompile Include="mainsource.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="WinAPI.22.S4.L.CPP.PwSG.rc" />
+    <ResourceCompile Include="MinesweeperGame.rc" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="bitmap2.bmp" />
     <Image Include="bomb.bmp" />
     <Image Include="flag.bmp" />
     <Image Include="small.ico" />
-    <Image Include="WinAPI.22.S4.L.CPP.PwSG.ico" />
+    <Image Include="MinesweeperGame.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

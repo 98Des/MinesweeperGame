@@ -24,17 +24,17 @@
     <ClInclude Include="Resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WinAPI.22.S4.L.CPP.PwSG.h">
+    <ClInclude Include="mainheader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="WinAPI.22.S4.L.CPP.PwSG.cpp">
+    <ClCompile Include="mainsource.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="WinAPI.22.S4.L.CPP.PwSG.rc">
+    <ResourceCompile Include="MinesweeperGame.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>
@@ -42,7 +42,7 @@
     <Image Include="small.ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="WinAPI.22.S4.L.CPP.PwSG.ico">
+    <Image Include="MinesweeperGame.ico">
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="flag.bmp">

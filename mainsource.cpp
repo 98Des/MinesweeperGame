@@ -1,4 +1,4 @@
-#include "WinAPI.22.S4.L.CPP.PwSG.h"
+#include "mainheader.h"
 
 
 
@@ -128,7 +128,11 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     if (!CreateNewMainWindow(hInstance, g_hWnd, nCmdShow))
         return FALSE;
 
+#ifdef RANDOM_NEW_GAME
+    NewGame(0, 0, TRUE);
+#else
     NewGame(iBoxesWidth, iBoxesHeight, FALSE);
+#endif
 
     return TRUE;
 }
@@ -145,12 +149,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    int wmId, wmEvent;
-    PAINTSTRUCT ps;
-
-    tagRECT lprRect;
-    GetClientRect(hWnd, &lprRect);
-
     switch (message)
     {
     case WM_TIMER:
@@ -229,10 +227,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     break;
     case WM_PAINT:
     {
+        PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hWnd, &ps);
-
-		//DrawText(hdc, str, (int)_tcslen(str), &lprRect, DT_LEFT | DT_TOP | DT_SINGLELINE);
-
         EndPaint(hWnd, &ps);
     }
     break;
@@ -247,9 +243,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 LRESULT CALLBACK WndProcChild(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    tagRECT lprRect;
-    GetClientRect(hWnd, &lprRect);
-
     switch (message)
     {
     case WM_LBUTTONDOWN:
@@ -274,11 +267,10 @@ LRESULT CALLBACK WndProcChild(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
                 if (g_ptTiles[i][j].is_bomb && g_ptTiles[i][j].status != FLAG)
                 {
                     g_ptTiles[i][j].revealed = true;
-                    DrawBomb(g_hWndChild[i][j]);
-                    bTimerStarted = false;
-                	KillTimer(g_hWnd, ipTimerId);
-                    ::MessageBox(g_hWnd, _T("KABOOM!"), _T("You losed!"), MB_OK | MB_ICONERROR);
-                    bGameStopped = true;
+                    RevealAllBombs();
+                    //DrawBomb(g_hWndChild[i][j]);
+
+                    GameLost(g_hWnd, ipTimerId);
                 }
                 else if(g_ptTiles[i][j].status == NUMBER)
                 {
@@ -287,10 +279,7 @@ LRESULT CALLBACK WndProcChild(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 
                     if(iActiveBombCount == 0)
                     {
-                        bTimerStarted = false;
-                        KillTimer(g_hWnd, ipTimerId);
-                        ::MessageBox(g_hWnd, _T("All mines have been defused."), _T("You wined!"), MB_OK);
-                        bGameStopped = true;
+                        GameWon(g_hWnd, ipTimerId);
                     }
                 }
             }
@@ -341,10 +330,10 @@ LRESULT CALLBACK WndProcChild(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 
             if (iActiveBombCount == 0)
             {
-                bTimerStarted = false;
-                ::MessageBox(g_hWnd, _T("All mines have been defused."), _T("You wined!"), MB_OK);
-                bGameStopped = true;
-                KillTimer(g_hWnd, ipTimerId);
+                if (bDebug)
+                    GameWonUnfair(g_hWnd, ipTimerId);
+                else
+                    GameWon(g_hWnd, ipTimerId);
             }
 	    }
 	break;
@@ -1115,4 +1104,36 @@ void TimerRoutine(HWND hWnd, WPARAM wParam)
 
     DeleteObject(hFont);
     DeleteDC(hdc);
+}
+
+void GameWon(HWND hWnd, INT_PTR timerId)
+{
+	bTimerStarted = false;
+	KillTimer(hWnd, timerId);
+	::MessageBox(hWnd, _T("All mines have been defused."), _T("You won!"), MB_OK);
+	bGameStopped = true;
+}
+
+void GameWonUnfair(HWND hWnd, INT_PTR timerId)
+{
+	bTimerStarted = false;
+	KillTimer(hWnd, timerId);
+	::MessageBox(hWnd, _T("All mines have been defused, but while using Debug mode.\nTry without it!"), _T("You won!"), MB_OK | MB_ICONWARNING);
+	bGameStopped = true;
+}
+
+void GameLost(HWND hWnd, INT_PTR timerId)
+{
+	bTimerStarted = false;
+	KillTimer(hWnd, timerId);
+	::MessageBox(hWnd, _T("KABOOM!"), _T("You lose!"), MB_OK | MB_ICONERROR);
+	bGameStopped = true;
+}
+
+void RevealAllBombs()
+{
+	for (int i = 0; i < iBoxesHeight; i++)
+		for (int j = 0; j < iBoxesWidth; j++)
+			if (g_ptTiles[i][j].is_bomb && g_ptTiles[i][j].status != FLAG)
+				DrawBomb(g_hWndChild[i][j]);
 }
