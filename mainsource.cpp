@@ -129,9 +129,13 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
         return FALSE;
 
 #ifdef RANDOM_NEW_GAME
-    NewGame(0, 0, TRUE);
+    {
+        NewGame(0, 0, TRUE);
+    }
 #else
-    NewGame(iBoxesWidth, iBoxesHeight, FALSE);
+    {
+        NewGame(iBoxesWidth, iBoxesHeight, FALSE);
+    }
 #endif
 
     return TRUE;
@@ -159,7 +163,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_COMMAND:
     {
         int wmId = LOWORD(wParam);
-        // Parse the menu selections:
+
         switch (wmId)
         {
         case IDM_GAME_CUSTOMSIZE:
@@ -179,9 +183,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             break;
         case IDM_GAME_NEW:
 #ifdef RANDOM_NEW_GAME
-        	NewGame(0, 0, TRUE);
+        {
+            NewGame(0, 0, TRUE);
+        }
 #else
+        {
             NewGame(iBoxesWidth, iBoxesHeight, FALSE);
+        }
 #endif
 			break;
         case IDM_HELP_DEBUG:
@@ -267,8 +275,8 @@ LRESULT CALLBACK WndProcChild(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
                 if (g_ptTiles[i][j].is_bomb && g_ptTiles[i][j].status != FLAG)
                 {
                     g_ptTiles[i][j].revealed = true;
+
                     RevealAllBombs();
-                    //DrawBomb(g_hWndChild[i][j]);
 
                     GameLost(g_hWnd, ipTimerId);
                 }
@@ -291,10 +299,6 @@ LRESULT CALLBACK WndProcChild(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 
 			int i = (int)GetProp(hWnd, _T("index_i")),
     			j = (int)GetProp(hWnd, _T("index_j"));
-
-            //WCHAR str[MAX_LOADSTRING];
-            //_stprintf_s(str, MAX_LOADSTRING, _T("i: %d,j: %d"), i, j);
-            //SetWindowTextW(g_hWnd, str);
 
             if(g_ptTiles[i][j].status != FLAG && iCurrentFlagCount > 0 && !g_ptTiles[i][j].revealed)
             {
@@ -340,7 +344,7 @@ LRESULT CALLBACK WndProcChild(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
     case WM_COMMAND:
     {
         int wmId = LOWORD(wParam);
-        // Parse the menu selections:
+
         switch (wmId)
         {
         default:
@@ -352,12 +356,10 @@ LRESULT CALLBACK WndProcChild(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
     {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hWnd, &ps);
-        // TODO: Add any drawing code that uses hdc here...
         EndPaint(hWnd, &ps);
     }
     break;
-    case WM_DESTROY:
-        //PostQuitMessage(0);
+    case WM_DESTROY: // prevent main window destruction
         break;
     case WM_NCDESTROY:
         break;
@@ -474,7 +476,17 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 INT Random(INT min, INT max)
 {
-    return min + (rand() % (max - min));
+#ifdef THREAD_SAFE_RANDOM
+    {
+        static thread_local std::mt19937 generator;
+        std::uniform_int_distribution<> distribution(min, max);
+        return distribution(generator);
+    }
+#else
+    {
+        return min + (rand() % (max - min));
+    }
+#endif
 }
 
 INT	CalculateWindowHeight(INT boxes_height, INT box_size, INT btwboxes_dist, INT title = iWindowTitleHeight)
@@ -610,7 +622,7 @@ BOOL CreateNewTileSet(Tile**& tiles, INT width, INT height)
 POINT GetCenterOfScreenPosition(INT width, INT height, INT boxdistance)
 {
     return POINT({ (GetSystemMetrics(SM_CXSCREEN) + 2 * boxdistance - width) / 2,
-    (GetSystemMetrics(SM_CYSCREEN) + 2 * boxdistance - height) / 2 });
+		(GetSystemMetrics(SM_CYSCREEN) + 2 * boxdistance - height) / 2 });
 }
 
 void WriteTextOnScreen(HWND hWnd)
@@ -624,7 +636,6 @@ void WriteTextOnScreen(HWND hWnd)
     SelectObject(hdc, hFont);
 
     SetTextColor(hdc, RGB(255, 0, 0));
-    
 
 
     WCHAR str[MAX_LOADSTRING];
@@ -653,9 +664,6 @@ void UpdateFlagText(HWND hWnd, INT newFlagCount)
     auto hFont = ARIAL_BOLD_FONT(25);
     SelectObject(hdc, hFont);
     SetTextColor(hdc, RGB(255, 0, 0));
-
-    //iFlagCount = newFlagCount;
-
 
     WCHAR str[MAX_LOADSTRING];
     _stprintf_s(str, MAX_LOADSTRING, _T("%02d"), newFlagCount);
@@ -723,26 +731,6 @@ void DrawBomb(HWND hWnd)
     SelectObject(hdc, hPenOld);
     DeleteObject(hPen);
     DeleteDC(hdc);
-
-
-
-
-
-
-
-
-
-    //HDC hdc = GetDC(hWnd);
-    //HBITMAP bitmap = LoadBitmap(hInst, MAKEINTRESOURCE());
-    //HDC memDC = CreateCompatibleDC(hdc);
-    //HBITMAP oldBitmap = (HBITMAP)SelectObject(memDC, bitmap);
-    //BITMAP bmInfo;
-    //GetObject(bitmap, sizeof(bmInfo), &bmInfo);
-    //BitBlt(hdc, 0, 0, 20, 20, memDC, 0, 0, SRCCOPY);
-    //StretchBlt(hdc, 0, 0, iBoxSize, iBoxSize, memDC, 0, 0, bmInfo.bmWidth, bmInfo.bmHeight, SRCCOPY);
-    //SelectObject(memDC, oldBitmap);
-    //DeleteObject(bitmap);
-    //DeleteDC(memDC);
 }
 
 void ProcessTile(HWND hWnd, INT i, INT j)
@@ -925,79 +913,6 @@ void BombAfterProcessCheck()
                     iActiveBombCount--;
                     g_ptTiles[i][j].defused = true;
                 }
-
-                //if (i == 0 && j == 0)
-                //{
-                //    if (g_ptTiles[i][j + 1].revealed && g_ptTiles[i + 1][j + 1].revealed && g_ptTiles[i + 1][j].revealed)
-                //    {
-                //        iActiveBombCount--;
-                //        g_ptTiles[i][j].defused = true;
-                //    }
-                //}
-                //else if (i == 0 && j > 0 && j < iBoxesWidth - 1)
-                //{
-                //    if (g_ptTiles[i][j - 1].revealed && g_ptTiles[i][j + 1].revealed && g_ptTiles[i + 1][j - 1].revealed && g_ptTiles[i + 1][j].revealed && g_ptTiles[i + 1][j + 1].revealed)
-                //    {
-                //        iActiveBombCount--;
-                //        g_ptTiles[i][j].defused = true;
-                //    }
-                //}
-                //else if (i == 0 && j == iBoxesWidth - 1)
-                //{
-                //    if (g_ptTiles[i][j - 1].revealed && g_ptTiles[i + 1][j - 1].revealed && g_ptTiles[i + 1][j].revealed)
-                //    {
-                //        iActiveBombCount--;
-                //        g_ptTiles[i][j].defused = true;
-                //    }
-                //}
-                //else if (i > 0 && i < iBoxesHeight - 1 && j == 0)
-                //{
-                //    if (g_ptTiles[i - 1][j].revealed && g_ptTiles[i - 1][j + 1].revealed && g_ptTiles[i][j + 1].revealed && g_ptTiles[i + 1][j + 1].revealed && g_ptTiles[i + 1][j].revealed)
-                //    {
-                //        iActiveBombCount--;
-                //        g_ptTiles[i][j].defused = true;
-                //    }
-                //}
-                //else if (i == iBoxesHeight - 1 && j == 0)
-                //{
-                //    if (g_ptTiles[i - 1][j].revealed && g_ptTiles[i - 1][j + 1].revealed && g_ptTiles[i][j + 1].revealed)
-                //    {
-                //        iActiveBombCount--;
-                //        g_ptTiles[i][j].defused = true;
-                //    }
-                //}
-                //else if (i == iBoxesHeight - 1 && j > 0 && j < iBoxesWidth - 1)
-                //{
-                //    if (g_ptTiles[i][j - 1].revealed && g_ptTiles[i - 1][j - 1].revealed && g_ptTiles[i - 1][j].revealed && g_ptTiles[i - 1][j + 1].revealed && g_ptTiles[i][j + 1].revealed)
-                //    {
-                //        iActiveBombCount--;
-                //        g_ptTiles[i][j].defused = true;
-                //    }
-                //}
-                //else if (i == iBoxesHeight - 1 && j == iBoxesWidth - 1)
-                //{
-                //    if (g_ptTiles[i][j - 1].revealed && g_ptTiles[i - 1][j - 1].revealed && g_ptTiles[i - 1][j].revealed)
-                //    {
-                //        iActiveBombCount--;
-                //        g_ptTiles[i][j].defused = true;
-                //    }
-                //}
-                //else if (i > 0 && i < iBoxesHeight - 1 && j == iBoxesWidth - 1)
-                //{
-                //    if (g_ptTiles[i - 1][j].revealed && g_ptTiles[i - 1][j - 1].revealed && g_ptTiles[i][j - 1].revealed && g_ptTiles[i + 1][j - 1].revealed && g_ptTiles[i + 1][j].revealed)
-                //    {
-                //        iActiveBombCount--;
-                //        g_ptTiles[i][j].defused = true;
-                //    }
-                //}
-                //else if (i > 0 && i < iBoxesHeight - 1 && j > 0 && j < iBoxesWidth - 1)
-                //{
-                //    if (g_ptTiles[i - 1][j - 1].revealed && g_ptTiles[i - 1][j].revealed && g_ptTiles[i - 1][j + 1].revealed && g_ptTiles[i][j - 1].revealed && g_ptTiles[i][j + 1].revealed && g_ptTiles[i + 1][j - 1].revealed && g_ptTiles[i + 1][j].revealed && g_ptTiles[i + 1][j + 1].revealed)
-                //    {
-                //        iActiveBombCount--;
-                //        g_ptTiles[i][j].defused = true;
-                //    }
-                //}
 }
 
 void NewGame(INT width, INT height, BOOL random)
@@ -1057,7 +972,7 @@ BOOL CreateNewMainWindow(HINSTANCE hInstance, HWND& hWnd, int nCmdShow)
 
     POINT Pos = GetCenterOfScreenPosition(iWindowWidth, iWindowHeight, distbtwboxes);
 
-    g_hWnd = CreateWindowW(
+    hWnd = CreateWindowW(
         szWindowClass,
         szTitle,
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
@@ -1065,20 +980,20 @@ BOOL CreateNewMainWindow(HINSTANCE hInstance, HWND& hWnd, int nCmdShow)
         iWindowWidth, iWindowHeight,
         nullptr,
         nullptr,
-        hInst,
+        hInstance,
         nullptr);
 
-    if (!g_hWnd)
+    if (!hWnd)
     {
         return FALSE;
     }
 
     WCHAR str[MAX_LOADSTRING];
     _stprintf_s(str, MAX_LOADSTRING, _T("Minesweeper"));
-    SetWindowTextW(g_hWnd, str);
+    SetWindowTextW(hWnd, str);
 
-    ShowWindow(g_hWnd, nCmdShow);
-    UpdateWindow(g_hWnd);
+    ShowWindow(hWnd, nCmdShow);
+    UpdateWindow(hWnd);
 
     return TRUE;
 }

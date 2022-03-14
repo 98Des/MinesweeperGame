@@ -27,6 +27,9 @@
     <ClInclude Include="mainheader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="defines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="mainsource.cpp">
