@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
-// Used by WinAPI.22.S4.L.CPP.PwSG.rc
+// Used by MinesweeperGame.rc
 //
 #define IDC_MYICON                      2
 #define IDD_WINAPI22S4LCPPPWSG_DIALOG   102
@@ -16,9 +16,9 @@
 #define IDD_DIALOG1                     135
 #define IDCANCEL                        1002
 #define IDC_STATIC1                     1004
-#define IDC_EDIT3                       1005
-#define IDC_EDIT4                       1006
-#define IDC_EDIT5                       1007
+#define IDC_EDIT1                       1005
+#define IDC_EDIT2                       1006
+#define IDC_EDIT3                       1007
 #define IDC_STATIC2                     1008
 #define IDC_STATIC3                     1009
 #define ID_FILE_CUSTOMSIZE              32771

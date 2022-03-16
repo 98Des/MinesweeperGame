@@ -7,7 +7,7 @@
 //----------------------------------------------------------------
 // Preprocessor Settings
 #define RANDOM_NEW_GAME
-#define THREAD_SAFE_RANDOM
+//#define THREAD_SAFE_RANDOM
 
 //----------------------------------------------------------------
 // Global Variables
@@ -17,8 +17,8 @@ HINSTANCE hDialogInst;
 HWND g_hWnd;
 HWND g_hWndDialog;
 HWND** g_hWndChild;
-WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
-WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
+WCHAR szTitle[MAX_LOAD_STRING];                  // The title bar text
+WCHAR szWindowClass[MAX_LOAD_STRING];            // the main window class name
 RECT rClientRect{};
 UINT uiSeed = time(nullptr);
 
@@ -73,41 +73,54 @@ FLOAT fCurrentTime = 0.0f;
 
 //----------------------------------------------------------------
 // Forward declarations of functions included in this code module
+
+// Class registering
 ATOM                RegisterClasses(HINSTANCE hInstance);
 ATOM				RegisterMainClass(HINSTANCE hInstance);
 ATOM				RegisterChildClass(HINSTANCE hInstance);
 ATOM				RegisterDialogClass(HINSTANCE hInstance);
+
+// Window procedures
+LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK	WndProcChild(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK	WndProcDialog(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+
+// Game initialization
 BOOL                InitInstance(HINSTANCE, int);
-BOOL				CreateNewChildren(HWND**&, HWND, INT, INT, INT, INT, INT);
+BOOL                CreateNewMainWindow(HINSTANCE hInstance, HWND& hWnd, int nCmdShow);
+BOOL				CreateNewChildrenWindows(HWND**&, HWND, INT, INT, INT, INT, INT);
+BOOL                CreateNewDialogWindow(HINSTANCE hInst, HWND hWnd);
 BOOL				CreateNewTileSet(Tile**&, INT, INT);
-BOOL				CreateNewDialogWindow();
+
+// Text functions
 void				WriteTextOnScreen(HWND);
 void				UpdateFlagText(HWND, INT);
-void				TimerRoutine(HWND hWnd, WPARAM wParam);
+
+// Screen numbers
 POINT				GetCenterOfScreenPosition(INT, INT, INT);
 INT					CalculateWindowHeight(INT, INT, INT, INT);
 INT					CalculateWindowWidth(INT, INT, INT);
+
+// Drawing functions
+void                ProcessTile(HWND, INT, INT);
+void                PaintBackground(HWND, INT);
+void                DrawFlag(HWND);
+void                SeizeFlag(HWND);
+void                DrawBomb(HWND);
+void                RevealAllBombs();
+INT                 ChooseColor(INT, INT);
+
+// Game conditions
+void                NewGame(INT, INT, BOOL);
+void                GameWon(HWND hWnd, INT_PTR timerId);
+void                GameWonUnfair(HWND hWnd, INT_PTR timerId);
+void                GameLost(HWND hWnd, INT_PTR timerId);
+void                GameRestarted(HWND hWnd, INT_PTR timerId);
+void                LaunchDebugMode();
+void                CloseDebugMode();
+
+// Other
+void                BombAfterProcessCheck();
+void				TimerRoutine(HWND hWnd, WPARAM wParam);
 INT					Random(INT, INT);
-LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-LRESULT CALLBACK	WndProcChild(HWND, UINT, WPARAM, LPARAM);
-BOOL CALLBACK		WndProcDialog(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-
-void PaintBackground(HWND, INT);
-void DrawFlag(HWND);
-void SeizeFlag(HWND);
-void DrawBomb(HWND);
-void ProcessTile(HWND, INT, INT);
-INT ChooseColor(INT, INT);
-
-void BombAfterProcessCheck();
-
-void NewGame(INT, INT, BOOL);
-
-BOOL CreateNewMainWindow(HINSTANCE hInstance, HWND& hWnd, int nCmdShow);
-
-
-void GameWon(HWND hWnd, INT_PTR timerId);
-void GameWonUnfair(HWND hWnd, INT_PTR timerId);
-void GameLost(HWND hWnd, INT_PTR timerId);
-void RevealAllBombs();

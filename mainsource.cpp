@@ -11,8 +11,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // Initialize global strings
-    LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_WINAPI22S4LCPPPWSG, szWindowClass, MAX_LOADSTRING);
+    LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOAD_STRING);
+    LoadStringW(hInstance, IDC_WINAPI22S4LCPPPWSG, szWindowClass, MAX_LOAD_STRING);
     RegisterClasses(hInstance);
 
     // Perform application initialization:
@@ -51,7 +51,6 @@ ATOM RegisterClasses(HINSTANCE hInstance)
 			RegisterChildClass(hInstance) |
 			RegisterDialogClass(hInstance);
 }
-
 ATOM RegisterMainClass(HINSTANCE hInstance)
 {
     WNDCLASSEXW wcex;
@@ -72,7 +71,6 @@ ATOM RegisterMainClass(HINSTANCE hInstance)
 
     return RegisterClassExW(&wcex);
 }
-
 ATOM RegisterChildClass(HINSTANCE hInstance)
 {
     WNDCLASSEXW wcex;
@@ -93,7 +91,6 @@ ATOM RegisterChildClass(HINSTANCE hInstance)
 
     return RegisterClassExW(&wcex);
 }
-
 ATOM RegisterDialogClass(HINSTANCE hInstance)
 {
     WNDCLASSEXW wcex;
@@ -109,37 +106,7 @@ ATOM RegisterDialogClass(HINSTANCE hInstance)
     return RegisterClassExW(&wcex);
 }
 
-//
-//   FUNCTION: InitInstance(HINSTANCE, int)
-//
-//   PURPOSE: Saves instance handle and creates main window
-//
-//   COMMENTS:
-//
-//        In this function, we save the instance handle in a global variable and
-//        create and display the main program window.
-//
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
-{
-    hInst = hInstance;
 
-    srand(uiSeed);
-
-    if (!CreateNewMainWindow(hInstance, g_hWnd, nCmdShow))
-        return FALSE;
-
-#ifdef RANDOM_NEW_GAME
-    {
-        NewGame(0, 0, TRUE);
-    }
-#else
-    {
-        NewGame(iBoxesWidth, iBoxesHeight, FALSE);
-    }
-#endif
-
-    return TRUE;
-}
 
 //
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
@@ -167,19 +134,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         switch (wmId)
         {
         case IDM_GAME_CUSTOMSIZE:
-	        {
-				//CreateNewDialogWindow();
-
-				g_hWndDialog = CreateDialog(hInst, MAKEINTRESOURCE(IDD_DIALOG1), hWnd, (DLGPROC)WndProcDialog);
-
-                SetDlgItemText(g_hWndDialog, IDC_STATIC1, _T("Width:"));
-                SetDlgItemText(g_hWndDialog, IDC_STATIC2, _T("Height:"));
-                SetDlgItemText(g_hWndDialog, IDC_STATIC3, _T("Mines:"));
-                SetDlgItemInt(g_hWndDialog, IDC_EDIT3, iBoxesWidth, false);
-                SetDlgItemInt(g_hWndDialog, IDC_EDIT4, iBoxesWidth, false);
-                SetDlgItemInt(g_hWndDialog, IDC_EDIT5, iBombCount, false);
-                ShowWindow(g_hWndDialog, SW_SHOW);
-	        }
+        	CreateNewDialogWindow(hInst, hWnd);
             break;
         case IDM_GAME_NEW:
 #ifdef RANDOM_NEW_GAME
@@ -202,23 +157,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
                 if(bDebug)
                 {
-					for(int i = 0; i < iBoxesHeight; i++)
-                        for(int j = 0; j < iBoxesWidth; j++)
-                        {
-                            ProcessTile(g_hWndChild[i][j], i, j);
-                        }
+                    LaunchDebugMode();
                 }
                 else if(!bDebug)
                 {
-	                for(int i = 0; i < iBoxesHeight; i++)
-                        for(int j = 0; j < iBoxesWidth; j++)
-                        {
-                            if(!g_ptTiles[i][j].revealed)
-                            	PaintBackground(g_hWndChild[i][j], DEFAULT_UNREVEALED_COLOR);
-
-                            if (g_ptTiles[i][j].status == FLAG)
-                                DrawFlag(g_hWndChild[i][j]);
-                        }
+                    CloseDebugMode();
                 }
 	        }
             break;
@@ -233,13 +176,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
     }
     break;
-    case WM_PAINT:
-    {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hWnd, &ps);
-        EndPaint(hWnd, &ps);
-    }
-    break;
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
@@ -248,7 +184,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return 0;
 }
-
 LRESULT CALLBACK WndProcChild(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -263,14 +198,14 @@ LRESULT CALLBACK WndProcChild(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 
 	        if (!bTimerStarted && !bGameStopped)
 	        {
-	            SetTimer(g_hWnd, ipTimerId, (UINT)(fTimeStep * 1000), NULL);
-	            bTimerStarted = !bTimerStarted;
+	            SetTimer(g_hWnd, ipTimerId, static_cast<UINT>(fTimeStep * 1000), nullptr);
+	            bTimerStarted = true;
 	        }
 
-	        int i = (int)GetProp(hWnd, _T("index_i")),
-	            j = (int)GetProp(hWnd, _T("index_j"));
+			const int i = reinterpret_cast<int>(GetProp(hWnd, I_INDEX));
+			const int j = reinterpret_cast<int>(GetProp(hWnd, J_INDEX));
 
-            if(!g_ptTiles[i][j].revealed && !bGameStopped)
+			if(!g_ptTiles[i][j].revealed && !bGameStopped)
             {
                 if (g_ptTiles[i][j].is_bomb && g_ptTiles[i][j].status != FLAG)
                 {
@@ -283,6 +218,7 @@ LRESULT CALLBACK WndProcChild(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
                 else if(g_ptTiles[i][j].status == NUMBER)
                 {
                     ProcessTile(hWnd, i, j);
+
                     BombAfterProcessCheck();
 
                     if(iActiveBombCount == 0)
@@ -295,10 +231,10 @@ LRESULT CALLBACK WndProcChild(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 		break;
     case WM_RBUTTONDOWN:
 	    {
-			if (bGameUpdateInProcess) return TRUE;
+			if (bGameUpdateInProcess || bGameStopped) return TRUE;
 
-			int i = (int)GetProp(hWnd, _T("index_i")),
-    			j = (int)GetProp(hWnd, _T("index_j"));
+			int i = (int)GetProp(hWnd, I_INDEX),
+    			j = (int)GetProp(hWnd, J_INDEX);
 
             if(g_ptTiles[i][j].status != FLAG && iCurrentFlagCount > 0 && !g_ptTiles[i][j].revealed)
             {
@@ -341,24 +277,6 @@ LRESULT CALLBACK WndProcChild(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
             }
 	    }
 	break;
-    case WM_COMMAND:
-    {
-        int wmId = LOWORD(wParam);
-
-        switch (wmId)
-        {
-        default:
-            return DefWindowProc(hWnd, message, wParam, lParam);
-        }
-    }
-    break;
-    case WM_PAINT:
-    {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hWnd, &ps);
-        EndPaint(hWnd, &ps);
-    }
-    break;
     case WM_DESTROY: // prevent main window destruction
         break;
     case WM_NCDESTROY:
@@ -368,29 +286,28 @@ LRESULT CALLBACK WndProcChild(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
     }
     return 0;
 }
-
-BOOL CALLBACK WndProcDialog(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WndProcDialog(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
 
     switch (message)
     {
     case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
+        return TRUE;
 
     case WM_COMMAND:
         if (LOWORD(wParam) == 2)			//CANCEL
         {
             EndDialog(hWnd, LOWORD(wParam));
-            g_hWndDialog = NULL;
-            return (INT_PTR)TRUE;
+            g_hWndDialog = nullptr;
+            return TRUE;
         }
         if (LOWORD(wParam) == IDOK)
         {
             //Kill_Children();
-            iBoxesWidth = GetDlgItemInt(hWnd, IDC_EDIT3, nullptr, false);
-            iBoxesHeight = GetDlgItemInt(hWnd, IDC_EDIT4, nullptr, false);
-            iBombCount = GetDlgItemInt(hWnd, IDC_EDIT5, nullptr, false);
+            iBoxesWidth = GetDlgItemInt(hWnd, IDC_EDIT1, nullptr, false);
+            iBoxesHeight = GetDlgItemInt(hWnd, IDC_EDIT2, nullptr, false);
+            iBombCount = GetDlgItemInt(hWnd, IDC_EDIT3, nullptr, false);
 
             if (iBombCount < iMinBombCount)
                 iBombCount = iMinBombCount;
@@ -410,46 +327,19 @@ BOOL CALLBACK WndProcDialog(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
             iFlagCount = iBombCount;
 
             NewGame(iBoxesWidth, iBoxesHeight, FALSE);
-
-            //Make_New_Game(hInst, dialogncmdshow);
+            
             EndDialog(hWnd, LOWORD(wParam));
-            g_hWndDialog = NULL;
-            return (INT_PTR)TRUE;
+            g_hWndDialog = nullptr;
+            return TRUE;
         }
         break;
 
     default:
-        return (INT_PTR)FALSE;
+        return FALSE;
     }
 
     return TRUE;
 }
-
-BOOL CreateNewDialogWindow()
-{
-    auto p = GetCenterOfScreenPosition(iWindowWidth, iWindowHeight, iActualDistBetweenBoxes - 2);
-
-    if(!(g_hWndDialog = CreateWindowW(
-        _T("DialogWindow"),
-        _T("Dialog"),
-        WS_VISIBLE | WS_OVERLAPPEDWINDOW,
-        p.x,
-        p.y,
-        200,
-        200,
-        nullptr,
-        nullptr,
-        hInst,
-        nullptr
-    ))) 
-        return FALSE;
-
-    ShowWindow(g_hWndDialog, 1);
-    UpdateWindow(g_hWndDialog);
-
-    return TRUE;
-}
-
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
@@ -471,35 +361,72 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 
 
-
-
-
-INT Random(INT min, INT max)
+//
+//   FUNCTION: InitInstance(HINSTANCE, int)
+//
+//   PURPOSE: Saves instance handle and creates main window
+//
+//   COMMENTS:
+//
+//        In this function, we save the instance handle in a global variable and
+//        create and display the main program window.
+//
+BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-#ifdef THREAD_SAFE_RANDOM
+    hInst = hInstance;
+
+    srand(uiSeed);
+
+    if (!CreateNewMainWindow(hInstance, g_hWnd, nCmdShow))
+        return FALSE;
+
+#ifdef RANDOM_NEW_GAME
     {
-        static thread_local std::mt19937 generator;
-        std::uniform_int_distribution<> distribution(min, max);
-        return distribution(generator);
+        NewGame(0, 0, TRUE);
     }
 #else
     {
-        return min + (rand() % (max - min));
+        NewGame(iBoxesWidth, iBoxesHeight, FALSE);
     }
 #endif
-}
 
-INT	CalculateWindowHeight(INT boxes_height, INT box_size, INT btwboxes_dist, INT title = iWindowTitleHeight)
+    return TRUE;
+}
+BOOL CreateNewMainWindow(HINSTANCE hInstance, HWND& hWnd, int nCmdShow)
 {
-    return boxes_height * (box_size + btwboxes_dist) + 59 + title + 2 * btwboxes_dist;
-}
+    const int distbtwboxes = iActualDistBetweenBoxes - 2;
 
-INT	CalculateWindowWidth(INT boxes_width, INT box_size, INT btwboxes_dist)
-{
-    return boxes_width * (box_size + btwboxes_dist) + 16 + 2 * btwboxes_dist;
-}
+    iWindowHeight = CalculateWindowHeight(iBoxesHeight, iBoxSize, distbtwboxes, iWindowTitleHeight);
+    iWindowWidth = CalculateWindowWidth(iBoxesWidth, iBoxSize, distbtwboxes);
 
-BOOL CreateNewChildren(HWND**& childptr, HWND parentptr, INT width, INT height, INT boxsize, INT boxdist, INT title)
+    POINT Pos = GetCenterOfScreenPosition(iWindowWidth, iWindowHeight, distbtwboxes);
+
+    hWnd = CreateWindowW(
+        szWindowClass,
+        szTitle,
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
+        Pos.x, Pos.y,
+        iWindowWidth, iWindowHeight,
+        nullptr,
+        nullptr,
+        hInstance,
+        nullptr);
+
+    if (!hWnd)
+    {
+        return FALSE;
+    }
+
+    WCHAR str[MAX_LOAD_STRING];
+    _stprintf_s(str, MAX_LOAD_STRING, _T("Minesweeper"));
+    SetWindowTextW(hWnd, str);
+
+    ShowWindow(hWnd, nCmdShow);
+    UpdateWindow(hWnd);
+
+    return TRUE;
+}
+BOOL CreateNewChildrenWindows(HWND**& childptr, HWND parentptr, INT width, INT height, INT boxsize, INT boxdist, INT title)
 {
     childptr = new HWND * [height];
     for (int i = 0; i < height; i++)
@@ -528,8 +455,8 @@ BOOL CreateNewChildren(HWND**& childptr, HWND parentptr, INT width, INT height, 
 
             SetWindowLong(childptr[i][j], GWL_STYLE, 0);
 
-            SetProp(childptr[i][j], _T("index_i"), (HANDLE)i);
-            SetProp(childptr[i][j], _T("index_j"), (HANDLE)j);
+            SetProp(childptr[i][j], I_INDEX, reinterpret_cast<HANDLE>(i));
+            SetProp(childptr[i][j], J_INDEX, reinterpret_cast<HANDLE>(j));
         }
     }
 
@@ -544,7 +471,21 @@ BOOL CreateNewChildren(HWND**& childptr, HWND parentptr, INT width, INT height, 
 
     return FALSE;
 }
+BOOL CreateNewDialogWindow(HINSTANCE hInst, HWND hWnd)
+{
+    if (!(g_hWndDialog = CreateDialog(hInst, MAKEINTRESOURCE(IDD_DIALOG1), hWnd, WndProcDialog)))
+        return FALSE;
 
+    SetDlgItemText(g_hWndDialog, IDC_STATIC1, _T("Width:"));
+    SetDlgItemText(g_hWndDialog, IDC_STATIC2, _T("Height:"));
+    SetDlgItemText(g_hWndDialog, IDC_STATIC3, _T("Mines:"));
+    SetDlgItemInt(g_hWndDialog, IDC_EDIT1, iBoxesWidth, false);
+    SetDlgItemInt(g_hWndDialog, IDC_EDIT2, iBoxesWidth, false);
+    SetDlgItemInt(g_hWndDialog, IDC_EDIT3, iBombCount, false);
+    ShowWindow(g_hWndDialog, SW_SHOW);
+
+    return TRUE;
+}
 BOOL CreateNewTileSet(Tile**& tiles, INT width, INT height)
 {
     tiles = new Tile * [height];
@@ -556,7 +497,7 @@ BOOL CreateNewTileSet(Tile**& tiles, INT width, INT height)
 
         for (int j = 0; j < width; j++)
             tiles[i][j] = { NUMBER, false, false,  false, 0 };
-    }
+}
 
 
     std::list<POINT> lBombCoordinates;
@@ -566,7 +507,7 @@ BOOL CreateNewTileSet(Tile**& tiles, INT width, INT height)
         int i = Random(0, height);
         int j = Random(0, width);
 
-        if(!tiles[i][j].is_bomb)
+        if (!tiles[i][j].is_bomb)
         {
             // the bomb has been planted
             tiles[i][j].is_bomb = true;
@@ -576,7 +517,7 @@ BOOL CreateNewTileSet(Tile**& tiles, INT width, INT height)
     }
 
     while (!lBombCoordinates.empty())
-	//for (auto& coor : lBombCoordinates) // x = i, y = j
+        //for (auto& coor : lBombCoordinates) // x = i, y = j
     {
         POINT coor = lBombCoordinates.back();
         lBombCoordinates.pop_back();
@@ -607,7 +548,7 @@ BOOL CreateNewTileSet(Tile**& tiles, INT width, INT height)
 
         if (i < height - 1 && j < width - 1)
             tiles[i + 1][j + 1].value++;
-        
+
     }
 
     for (int i = 0; i < height; i++)
@@ -618,12 +559,6 @@ BOOL CreateNewTileSet(Tile**& tiles, INT width, INT height)
 }
 
 
-
-POINT GetCenterOfScreenPosition(INT width, INT height, INT boxdistance)
-{
-    return POINT({ (GetSystemMetrics(SM_CXSCREEN) + 2 * boxdistance - width) / 2,
-		(GetSystemMetrics(SM_CYSCREEN) + 2 * boxdistance - height) / 2 });
-}
 
 void WriteTextOnScreen(HWND hWnd)
 {
@@ -638,12 +573,12 @@ void WriteTextOnScreen(HWND hWnd)
     SetTextColor(hdc, RGB(255, 0, 0));
 
 
-    WCHAR str[MAX_LOADSTRING];
-    _stprintf_s(str, MAX_LOADSTRING, _T("%06.1f"), fCurrentTime);
+    WCHAR str[MAX_LOAD_STRING];
+    _stprintf_s(str, MAX_LOAD_STRING, _T("%06.1f"), fCurrentTime);
 
     ExtTextOut(hdc, (lprRect.right - lprRect.left) / 4, 0, ETO_CLIPPED, &lprRect, str, _tcslen(str), nullptr);
 
-    _stprintf_s(str, MAX_LOADSTRING, _T("%d"), iFlagCount);
+    _stprintf_s(str, MAX_LOAD_STRING, _T("%d"), iFlagCount);
 
     ExtTextOut(hdc, (lprRect.right - lprRect.left) * 3 / 4, 0, ETO_CLIPPED, &lprRect, str, _tcslen(str), nullptr);
 
@@ -651,10 +586,9 @@ void WriteTextOnScreen(HWND hWnd)
     DeleteObject(hFont);
     DeleteDC(hdc);
 }
-
 void UpdateFlagText(HWND hWnd, INT newFlagCount)
 {
-    if(newFlagCount < 0) return;
+    if (newFlagCount < 0) return;
 
     HDC hdc = GetDC(hWnd);
 
@@ -665,76 +599,38 @@ void UpdateFlagText(HWND hWnd, INT newFlagCount)
     SelectObject(hdc, hFont);
     SetTextColor(hdc, RGB(255, 0, 0));
 
-    WCHAR str[MAX_LOADSTRING];
-    _stprintf_s(str, MAX_LOADSTRING, _T("%02d"), newFlagCount);
+    WCHAR str[MAX_LOAD_STRING];
+    _stprintf_s(str, MAX_LOAD_STRING, _T("%02d"), newFlagCount);
     ExtTextOut(hdc, (lprRect.right - lprRect.left) * 3 / 4, 0, ETO_CLIPPED, &lprRect, str, _tcslen(str), nullptr);
 
     DeleteObject(hFont);
     DeleteDC(hdc);
 }
 
-void PaintBackground(HWND hWnd, INT color)
+
+
+POINT GetCenterOfScreenPosition(INT width, INT height, INT boxdistance)
 {
-    HDC hdc = GetDC(hWnd);
-    RECT rc;
-    GetClientRect(hWnd, &rc);
-    HBRUSH brush = CreateSolidBrush(color);
-    HBRUSH oldBrush = (HBRUSH)SelectObject(hdc, brush);
-    Rectangle(hdc, -1, -1, rc.right - rc.left + 1, rc.bottom - rc.top + 1);
-    SelectObject(hdc, oldBrush);
-    DeleteObject(brush);
-    ReleaseDC(hWnd, hdc);
+    return POINT({ (GetSystemMetrics(SM_CXSCREEN) + 2 * boxdistance - width) / 2,
+        (GetSystemMetrics(SM_CYSCREEN) + 2 * boxdistance - height) / 2 });
+}
+INT	CalculateWindowHeight(INT boxes_height, INT box_size, INT btwboxes_dist, INT title = iWindowTitleHeight)
+{
+    // 59 - the exact number of pixels that are taken for the upper bar of the window
+    return boxes_height * (box_size + btwboxes_dist) + 59 + title + 2 * btwboxes_dist;
+}
+INT	CalculateWindowWidth(INT boxes_width, INT box_size, INT btwboxes_dist)
+{
+    // 16 - pixels of the border changing field
+    return boxes_width * (box_size + btwboxes_dist) + 16 + 2 * btwboxes_dist;
 }
 
-void DrawFlag(HWND hWnd)
-{
-    HDC hdc = GetDC(hWnd);
-    HBITMAP bitmap = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP1));
-    HDC memDC = CreateCompatibleDC(hdc);
-    HBITMAP oldBitmap = (HBITMAP)SelectObject(memDC, bitmap);
-    BITMAP bmInfo;
-    GetObject(bitmap, sizeof(bmInfo), &bmInfo);
-    BitBlt(hdc, 0, 0, 20, 20, memDC, 0, 0, SRCCOPY);
-    StretchBlt(hdc, 0, 0, iBoxSize, iBoxSize, memDC, 0, 0, bmInfo.bmWidth, bmInfo.bmHeight, SRCCOPY);
-    SelectObject(memDC, oldBitmap);
-    DeleteObject(bitmap);
-    DeleteDC(memDC);
-}
 
-void SeizeFlag(HWND hWnd)
-{
-    HDC hdc = GetDC(hWnd);
-    RECT rc;
-    GetClientRect(hWnd, &rc);
-    HBRUSH brush = CreateSolidBrush(DEFAULT_UNREVEALED_COLOR);
-    HBRUSH oldBrush = (HBRUSH)SelectObject(hdc, brush);
-    Rectangle(hdc, -1, -1, rc.right + 1, rc.bottom + 1);
-    SelectObject(hdc, oldBrush);
-    DeleteObject(brush);
-    ReleaseDC(hWnd, hdc);
-}
-
-void DrawBomb(HWND hWnd)
-{
-    if (g_ptTiles[(int)GetProp(hWnd, _T("index_i"))][(int)GetProp(hWnd, _T("index_j"))].revealed)
-        PaintBackground(hWnd, DEFAULT_REVEALED_COLOR);
-    else
-        PaintBackground(hWnd, DEFAULT_UNREVEALED_COLOR);
-
-    HDC hdc = GetDC(hWnd);
-    HPEN hPenOld, hPen = CreatePen(PS_SOLID, iBoxSize * 4 / 5, BLACK_COLOR);
-    hPenOld = (HPEN)SelectObject(hdc, hPen);
-
-    MoveToEx(hdc, iBoxSize / 2 - 1, iBoxSize / 2 - 1, nullptr);
-    LineTo(hdc, iBoxSize / 2 - 1, iBoxSize / 2 - 1);
-
-    SelectObject(hdc, hPenOld);
-    DeleteObject(hPen);
-    DeleteDC(hdc);
-}
 
 void ProcessTile(HWND hWnd, INT i, INT j)
 {
+    //Sleep(100);
+
     if (g_ptTiles[i][j].status == FLAG)
     {
         DrawFlag(hWnd);
@@ -747,23 +643,16 @@ void ProcessTile(HWND hWnd, INT i, INT j)
         return;
     }
 
-	if(!bDebug)
-	{
+    if (!bDebug)
+    {
         g_ptTiles[i][j].revealed = true;
-	}
+    }
 
     HDC hdc = GetDC(hWnd);
     RECT rc;
     GetClientRect(hWnd, &rc);
 
-    /*TCHAR s[2];
-    _itow_s(matrix[i][j], s, 16);
-    int r, g, b;
-    Choose_Color(matrix[i][j], &r, &g, &b);*/
-
-
-
-    if(g_ptTiles[i][j].value == 0 && g_ptTiles[i][j].revealed)
+    if (g_ptTiles[i][j].value == 0 && g_ptTiles[i][j].revealed)
     {
         PaintBackground(hWnd, DEFAULT_REVEALED_COLOR);
 
@@ -816,110 +705,120 @@ void ProcessTile(HWND hWnd, INT i, INT j)
     else if (g_ptTiles[i][j].value > 0 && g_ptTiles[i][j].revealed)
     {
         SetBkMode(hdc, TRANSPARENT);
-        
-    	PaintBackground(hWnd, DEFAULT_REVEALED_COLOR);
+
+        PaintBackground(hWnd, DEFAULT_REVEALED_COLOR);
 
         SetTextColor(hdc, ChooseColor(i, j));
 
-        WCHAR str[MAX_LOADSTRING];
-        _stprintf_s(str, MAX_LOADSTRING, _T("%d"), g_ptTiles[i][j].value);
-        DrawText(hdc, str, (int)_tcslen(str), &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+        WCHAR str[MAX_LOAD_STRING];
+        _stprintf_s(str, MAX_LOAD_STRING, _T("%d"), g_ptTiles[i][j].value);
+        DrawText(hdc, str, static_cast<int>(_tcslen(str)), &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
     }
-
-    if (bDebug && !g_ptTiles[i][j].revealed)
+    else if (bDebug && !g_ptTiles[i][j].revealed)
     {
         SetBkMode(hdc, TRANSPARENT);
-        
+
         if (g_ptTiles[i][j].value > 0)
         {
             SetTextColor(hdc, ChooseColor(i, j));
 
-            WCHAR str[MAX_LOADSTRING];
-            _stprintf_s(str, MAX_LOADSTRING, _T("%d"), g_ptTiles[i][j].value);
-            DrawText(hdc, str, (int)_tcslen(str), &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+            WCHAR str[MAX_LOAD_STRING];
+            _stprintf_s(str, MAX_LOAD_STRING, _T("%d"), g_ptTiles[i][j].value);
+            DrawText(hdc, str, static_cast<int>(_tcslen(str)), &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
         }
     }
 
     ReleaseDC(hWnd, hdc);
 }
-
-INT ChooseColor(INT i, INT j)
+void PaintBackground(HWND hWnd, INT color)
 {
-    int res{};
+    HDC hdc = GetDC(hWnd);
+    RECT rc;
+    GetClientRect(hWnd, &rc);
+    HBRUSH brush = CreateSolidBrush(color);
+    HBRUSH oldBrush = (HBRUSH)SelectObject(hdc, brush);
 
-    switch (g_ptTiles[i][j].value)
-    {
-    case 1:
-        res = BLUE_COLOR;
-        break;
-    case 2:
-        res = GREEN_COLOR;
-        break;
-    case 3:
-        res = RED_COLOR;
-        break;
-    case 4:
-        res = YELLOW_COLOR;
-        break;
-    case 5:
-        res = TURQUOISE_COLOR;
-        break;
-    case 6:
-        res = VIOLET_COLOR;
-        break;
-    case 7:
-        res = ORANGE_COLOR;
-        break;
-    case 8:
-        res = BLACK_COLOR;
-        break;
-    }
-
-    return res;
+    Rectangle(hdc, iActualDistBetweenBoxes - 2, iActualDistBetweenBoxes - 2, rc.right - rc.left + iActualDistBetweenBoxes, rc.bottom - rc.top + iActualDistBetweenBoxes);
+    SelectObject(hdc, oldBrush);
+    DeleteObject(brush);
+    ReleaseDC(hWnd, hdc);
 }
+void DrawFlag(HWND hWnd)
+{
+    HDC hdc = GetDC(hWnd);
+    HBITMAP bitmap = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP1));
+    HDC memDC = CreateCompatibleDC(hdc);
+    HBITMAP oldBitmap = (HBITMAP)SelectObject(memDC, bitmap);
+    BITMAP bmInfo;
+    GetObject(bitmap, sizeof(bmInfo), &bmInfo);
+    BitBlt(hdc, 0, 0, 20, 20, memDC, 0, 0, SRCCOPY);
+    StretchBlt(hdc, 0, 0, iBoxSize, iBoxSize, memDC, 0, 0, bmInfo.bmWidth, bmInfo.bmHeight, SRCCOPY);
+    SelectObject(memDC, oldBitmap);
+    DeleteObject(bitmap);
+    DeleteDC(memDC);
+}
+void SeizeFlag(HWND hWnd)
+{
+    HDC hdc = GetDC(hWnd);
+    RECT rc;
+    GetClientRect(hWnd, &rc);
+    HBRUSH brush = CreateSolidBrush(DEFAULT_UNREVEALED_COLOR);
+    HBRUSH oldBrush = (HBRUSH)SelectObject(hdc, brush);
+    Rectangle(hdc, iActualDistBetweenBoxes - 2, iActualDistBetweenBoxes - 2, rc.right - rc.left + iActualDistBetweenBoxes, rc.bottom - rc.top + iActualDistBetweenBoxes);
+    SelectObject(hdc, oldBrush);
+    DeleteObject(brush);
+    ReleaseDC(hWnd, hdc);
+}
+void DrawBomb(HWND hWnd)
+{
+    if (g_ptTiles[(int)GetProp(hWnd, _T("index_i"))][(int)GetProp(hWnd, _T("index_j"))].revealed)
+        PaintBackground(hWnd, DEFAULT_REVEALED_COLOR);
+    else
+        PaintBackground(hWnd, DEFAULT_UNREVEALED_COLOR);
 
-void BombAfterProcessCheck()
+    HDC hdc = GetDC(hWnd);
+    HPEN hPenOld, hPen = CreatePen(PS_SOLID, iBoxSize * 4 / 5, BLACK_COLOR);
+    hPenOld = (HPEN)SelectObject(hdc, hPen);
+
+    MoveToEx(hdc, iBoxSize / 2 - 1, iBoxSize / 2 - 1, nullptr);
+    LineTo(hdc, iBoxSize / 2 - 1, iBoxSize / 2 - 1);
+
+    SelectObject(hdc, hPenOld);
+    DeleteObject(hPen);
+    DeleteDC(hdc);
+}
+void RevealAllBombs()
 {
     for (int i = 0; i < iBoxesHeight; i++)
         for (int j = 0; j < iBoxesWidth; j++)
-            if (g_ptTiles[i][j].is_bomb && !g_ptTiles[i][j].defused)
-                if((i == 0 && j == 0 && 
-                    g_ptTiles[i][j + 1].revealed && g_ptTiles[i + 1][j + 1].revealed && g_ptTiles[i + 1][j].revealed) ||
-
-                    (i == 0 && j > 0 && j < iBoxesWidth - 1 && 
-                        g_ptTiles[i][j - 1].revealed && g_ptTiles[i][j + 1].revealed && g_ptTiles[i + 1][j - 1].revealed && g_ptTiles[i + 1][j].revealed && g_ptTiles[i + 1][j + 1].revealed) ||
-
-                    (i == 0 && j == iBoxesWidth - 1 && 
-                        g_ptTiles[i][j - 1].revealed && g_ptTiles[i + 1][j - 1].revealed && g_ptTiles[i + 1][j].revealed) ||
-
-                    (i > 0 && i < iBoxesHeight - 1 && j == 0 && 
-                        g_ptTiles[i - 1][j].revealed && g_ptTiles[i - 1][j + 1].revealed && g_ptTiles[i][j + 1].revealed && g_ptTiles[i + 1][j + 1].revealed && g_ptTiles[i + 1][j].revealed) ||
-
-                    (i == iBoxesHeight - 1 && j == 0 && 
-                        g_ptTiles[i - 1][j].revealed && g_ptTiles[i - 1][j + 1].revealed && g_ptTiles[i][j + 1].revealed) ||
-
-                    (i == iBoxesHeight - 1 && j > 0 && j < iBoxesWidth - 1 && 
-                        g_ptTiles[i][j - 1].revealed && g_ptTiles[i - 1][j - 1].revealed && g_ptTiles[i - 1][j].revealed && g_ptTiles[i - 1][j + 1].revealed && g_ptTiles[i][j + 1].revealed) ||
-
-                    (i == iBoxesHeight - 1 && j == iBoxesWidth - 1 && 
-                        g_ptTiles[i][j - 1].revealed && g_ptTiles[i - 1][j - 1].revealed && g_ptTiles[i - 1][j].revealed) ||
-
-                    (i > 0 && i < iBoxesHeight - 1 && j == iBoxesWidth - 1 
-                        && g_ptTiles[i - 1][j].revealed && g_ptTiles[i - 1][j - 1].revealed && g_ptTiles[i][j - 1].revealed && g_ptTiles[i + 1][j - 1].revealed && g_ptTiles[i + 1][j].revealed) ||
-
-                    (i > 0 && i < iBoxesHeight - 1 && j > 0 && j < iBoxesWidth - 1 && 
-                        g_ptTiles[i - 1][j - 1].revealed && g_ptTiles[i - 1][j].revealed && g_ptTiles[i - 1][j + 1].revealed && g_ptTiles[i][j - 1].revealed && g_ptTiles[i][j + 1].revealed && g_ptTiles[i + 1][j - 1].revealed && g_ptTiles[i + 1][j].revealed && g_ptTiles[i + 1][j + 1].revealed))
-                {
-                    iActiveBombCount--;
-                    g_ptTiles[i][j].defused = true;
-                }
+            if (g_ptTiles[i][j].is_bomb && g_ptTiles[i][j].status != FLAG)
+                DrawBomb(g_hWndChild[i][j]);
 }
+INT ChooseColor(INT i, INT j)
+{
+    switch (g_ptTiles[i][j].value)
+    {
+    case 1: return BLUE_COLOR;
+    case 2: return GREEN_COLOR;
+    case 3: return RED_COLOR;
+    case 4: return YELLOW_COLOR;
+    case 5: return TURQUOISE_COLOR;
+    case 6: return VIOLET_COLOR;
+    case 7: return ORANGE_COLOR;
+    case 8: return BLACK_COLOR;
+    }
+
+    return 0;
+}
+
+
 
 void NewGame(INT width, INT height, BOOL random)
 {
-    bGameUpdateInProcess = true;
+    // TODO: ACTUALLY FIX THE OVERDRAWING BUG
+    bGameUpdateInProcess = true;    // <- doesn't helps
 
-    if (random) 
+    if (random) // to keep the old random feature
     {
         iBoxesHeight = Random(iBoxesMinHeight, iBoxesMaxHeight);
         iBoxesWidth = Random(iBoxesMinWidth, iBoxesMaxWidth);
@@ -930,7 +829,7 @@ void NewGame(INT width, INT height, BOOL random)
         iBoxesWidth = width;
     }
 
-    const int iDistBetweenBoxes = iActualDistBetweenBoxes - 2;
+    const int iDistBetweenBoxes = iActualDistBetweenBoxes - 2;  // don't ask :^)
 
     iWindowHeight = CalculateWindowHeight(iBoxesHeight, iBoxSize, iDistBetweenBoxes, iWindowTitleHeight);
     iWindowWidth = CalculateWindowWidth(iBoxesWidth, iBoxSize, iDistBetweenBoxes);
@@ -939,10 +838,11 @@ void NewGame(INT width, INT height, BOOL random)
 
     MoveWindow(g_hWnd, newPos.x, newPos.y, iWindowWidth, iWindowHeight, TRUE);
 
-    CreateNewChildren(g_hWndChild, g_hWnd, iBoxesWidth, iBoxesHeight, iBoxSize, iDistBetweenBoxes, iWindowTitleHeight);
+    CreateNewChildrenWindows(g_hWndChild, g_hWnd, iBoxesWidth, iBoxesHeight, iBoxSize, iDistBetweenBoxes, iWindowTitleHeight);
     CreateNewTileSet(g_ptTiles, iBoxesWidth, iBoxesHeight);
 
     fCurrentTime = 0.0f;
+    KillTimer(g_hWnd, ipTimerId);
     bTimerStarted = false;
     bGameStarted = false;
     bGameStopped = false;
@@ -960,45 +860,97 @@ void NewGame(INT width, INT height, BOOL random)
 
     WriteTextOnScreen(g_hWnd);
 
-    bGameUpdateInProcess = false;
+    bGameUpdateInProcess = false;   // <- doesn't helps
 }
-
-BOOL CreateNewMainWindow(HINSTANCE hInstance, HWND& hWnd, int nCmdShow)
+void GameWon(HWND hWnd, INT_PTR timerId)
 {
-    const int distbtwboxes = iActualDistBetweenBoxes - 2;
+    KillTimer(hWnd, timerId);
+    if (iCurrentFlagCount > 0)
+        ::MessageBox(hWnd, _T("All mines have been found."), _T("You won!"), MB_OK);
+    else
+        ::MessageBox(hWnd, _T("All mines have been defused."), _T("You won!"), MB_OK);
+    bGameStopped = true;
+    bTimerStarted = false;
+}
+void GameWonUnfair(HWND hWnd, INT_PTR timerId)
+{
+    KillTimer(hWnd, timerId);
+    ::MessageBox(hWnd, _T("All mines have been defused, but while using Debug mode.\nTry without it!"), _T("You won!"), MB_OK | MB_ICONWARNING);
+    bGameStopped = true;
+    bTimerStarted = false;
+}
+void GameLost(HWND hWnd, INT_PTR timerId)
+{
+    KillTimer(hWnd, timerId);
+    ::MessageBox(hWnd, _T("KABOOM!"), _T("You lose!"), MB_OK | MB_ICONERROR);
+    bGameStopped = true;
+    bTimerStarted = false;
+}
+void GameRestarted(HWND hWnd, INT_PTR timerId)
+{
+    KillTimer(hWnd, timerId);
+    bGameStopped = true;
+    bTimerStarted = false;
+}
+void LaunchDebugMode()
+{
+	for (int i = 0; i < iBoxesHeight; i++)
+		for (int j = 0; j < iBoxesWidth; j++)
+		{
+			ProcessTile(g_hWndChild[i][j], i, j);
+		}
+}
+void CloseDebugMode()
+{
+	for (int i = 0; i < iBoxesHeight; i++)
+		for (int j = 0; j < iBoxesWidth; j++)
+		{
+			if (!g_ptTiles[i][j].revealed)
+				PaintBackground(g_hWndChild[i][j], DEFAULT_UNREVEALED_COLOR);
 
-    iWindowHeight = CalculateWindowHeight(iBoxesHeight, iBoxSize, distbtwboxes, iWindowTitleHeight);
-    iWindowWidth = CalculateWindowWidth(iBoxesWidth, iBoxSize, distbtwboxes);
-
-    POINT Pos = GetCenterOfScreenPosition(iWindowWidth, iWindowHeight, distbtwboxes);
-
-    hWnd = CreateWindowW(
-        szWindowClass,
-        szTitle,
-        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
-        Pos.x, Pos.y,
-        iWindowWidth, iWindowHeight,
-        nullptr,
-        nullptr,
-        hInstance,
-        nullptr);
-
-    if (!hWnd)
-    {
-        return FALSE;
-    }
-
-    WCHAR str[MAX_LOADSTRING];
-    _stprintf_s(str, MAX_LOADSTRING, _T("Minesweeper"));
-    SetWindowTextW(hWnd, str);
-
-    ShowWindow(hWnd, nCmdShow);
-    UpdateWindow(hWnd);
-
-    return TRUE;
+			if (g_ptTiles[i][j].status == FLAG)
+				DrawFlag(g_hWndChild[i][j]);
+		}
 }
 
 
+
+void BombAfterProcessCheck()
+{
+    for (int i = 0; i < iBoxesHeight; i++)
+        for (int j = 0; j < iBoxesWidth; j++)
+            if (g_ptTiles[i][j].is_bomb && !g_ptTiles[i][j].defused)    // feeling kinda retarded 
+                if ((i == 0 && j == 0 &&
+                    g_ptTiles[i][j + 1].revealed && g_ptTiles[i + 1][j + 1].revealed && g_ptTiles[i + 1][j].revealed) ||
+
+                    (i == 0 && j > 0 && j < iBoxesWidth - 1 &&
+                        g_ptTiles[i][j - 1].revealed && g_ptTiles[i][j + 1].revealed && g_ptTiles[i + 1][j - 1].revealed && g_ptTiles[i + 1][j].revealed && g_ptTiles[i + 1][j + 1].revealed) ||
+
+                    (i == 0 && j == iBoxesWidth - 1 &&
+                        g_ptTiles[i][j - 1].revealed && g_ptTiles[i + 1][j - 1].revealed && g_ptTiles[i + 1][j].revealed) ||
+
+                    (i > 0 && i < iBoxesHeight - 1 && j == 0 &&
+                        g_ptTiles[i - 1][j].revealed && g_ptTiles[i - 1][j + 1].revealed && g_ptTiles[i][j + 1].revealed && g_ptTiles[i + 1][j + 1].revealed && g_ptTiles[i + 1][j].revealed) ||
+
+                    (i == iBoxesHeight - 1 && j == 0 &&
+                        g_ptTiles[i - 1][j].revealed && g_ptTiles[i - 1][j + 1].revealed && g_ptTiles[i][j + 1].revealed) ||
+
+                    (i == iBoxesHeight - 1 && j > 0 && j < iBoxesWidth - 1 &&
+                        g_ptTiles[i][j - 1].revealed && g_ptTiles[i - 1][j - 1].revealed && g_ptTiles[i - 1][j].revealed && g_ptTiles[i - 1][j + 1].revealed && g_ptTiles[i][j + 1].revealed) ||
+
+                    (i == iBoxesHeight - 1 && j == iBoxesWidth - 1 &&
+                        g_ptTiles[i][j - 1].revealed && g_ptTiles[i - 1][j - 1].revealed && g_ptTiles[i - 1][j].revealed) ||
+
+                    (i > 0 && i < iBoxesHeight - 1 && j == iBoxesWidth - 1
+                        && g_ptTiles[i - 1][j].revealed && g_ptTiles[i - 1][j - 1].revealed && g_ptTiles[i][j - 1].revealed && g_ptTiles[i + 1][j - 1].revealed && g_ptTiles[i + 1][j].revealed) ||
+
+                    (i > 0 && i < iBoxesHeight - 1 && j > 0 && j < iBoxesWidth - 1 &&
+                        g_ptTiles[i - 1][j - 1].revealed && g_ptTiles[i - 1][j].revealed && g_ptTiles[i - 1][j + 1].revealed && g_ptTiles[i][j - 1].revealed && g_ptTiles[i][j + 1].revealed && g_ptTiles[i + 1][j - 1].revealed && g_ptTiles[i + 1][j].revealed && g_ptTiles[i + 1][j + 1].revealed))
+                {
+                    iActiveBombCount--;
+                    g_ptTiles[i][j].defused = true;
+                }
+}
 void TimerRoutine(HWND hWnd, WPARAM wParam)
 {
     if (static_cast<INT_PTR>(wParam) != ipTimerId && bTimerStarted) return;
@@ -1009,46 +961,28 @@ void TimerRoutine(HWND hWnd, WPARAM wParam)
     auto hFont = ARIAL_BOLD_FONT(25);
     RECT lprRect{};
 
-	GetClientRect(hWnd, &lprRect);
+    GetClientRect(hWnd, &lprRect);
     SelectObject(hdc, hFont);
     SetTextColor(hdc, RGB(255, 0, 0));
 
-    WCHAR str[MAX_LOADSTRING];
-    _stprintf_s(str, MAX_LOADSTRING, _T("%06.1f"), fCurrentTime);
+    WCHAR str[MAX_LOAD_STRING];
+    _stprintf_s(str, MAX_LOAD_STRING, _T("%06.1f"), fCurrentTime);
     ExtTextOut(hdc, (lprRect.right - lprRect.left) / 4, 0, ETO_CLIPPED, &lprRect, str, _tcslen(str), nullptr);
 
     DeleteObject(hFont);
     DeleteDC(hdc);
 }
-
-void GameWon(HWND hWnd, INT_PTR timerId)
+INT Random(INT min, INT max)
 {
-	bTimerStarted = false;
-	KillTimer(hWnd, timerId);
-	::MessageBox(hWnd, _T("All mines have been defused."), _T("You won!"), MB_OK);
-	bGameStopped = true;
-}
-
-void GameWonUnfair(HWND hWnd, INT_PTR timerId)
-{
-	bTimerStarted = false;
-	KillTimer(hWnd, timerId);
-	::MessageBox(hWnd, _T("All mines have been defused, but while using Debug mode.\nTry without it!"), _T("You won!"), MB_OK | MB_ICONWARNING);
-	bGameStopped = true;
-}
-
-void GameLost(HWND hWnd, INT_PTR timerId)
-{
-	bTimerStarted = false;
-	KillTimer(hWnd, timerId);
-	::MessageBox(hWnd, _T("KABOOM!"), _T("You lose!"), MB_OK | MB_ICONERROR);
-	bGameStopped = true;
-}
-
-void RevealAllBombs()
-{
-	for (int i = 0; i < iBoxesHeight; i++)
-		for (int j = 0; j < iBoxesWidth; j++)
-			if (g_ptTiles[i][j].is_bomb && g_ptTiles[i][j].status != FLAG)
-				DrawBomb(g_hWndChild[i][j]);
+#ifdef THREAD_SAFE_RANDOM
+    {
+        static thread_local std::mt19937 generator;
+        std::uniform_int_distribution<> distribution(min, max);
+        return distribution(generator);
+    }
+#else
+    {
+        return min + (rand() % (max - min));
+    }
+#endif
 }
