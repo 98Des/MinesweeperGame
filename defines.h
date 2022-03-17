@@ -1,20 +1,18 @@
 #pragma once
 
-
-#define MAX_LOAD_STRING 100
-
 #define ARIAL_BOLD_FONT(size) (CreateFont(size, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, VARIABLE_PITCH, TEXT("Arial")))
 
-#define I_INDEX	(_T("INDEXI"))
-#define J_INDEX	(_T("INDEXJ"))
+#define MAX_LOAD_STRING				100
+#define I_INDEX						(_T("INDEXI"))
+#define J_INDEX						(_T("INDEXJ"))
 
-#define DEFAULT_UNREVEALED_COLOR (RGB(200, 200, 200))
-#define DEFAULT_REVEALED_COLOR (RGB(220, 220, 220))
-#define RED_COLOR (RGB(255, 0, 0))
-#define GREEN_COLOR (RGB(0, 255, 0))
-#define BLUE_COLOR (RGB(0, 0, 255))
-#define YELLOW_COLOR (RGB(255, 255, 0))
-#define TURQUOISE_COLOR (RGB(0, 255, 255))
-#define VIOLET_COLOR (RGB(255, 0, 255))
-#define ORANGE_COLOR (RGB(255, 128, 0))
-#define BLACK_COLOR (RGB(0, 0, 0))
+#define DEFAULT_UNREVEALED_COLOR	(RGB(200, 200, 200))
+#define DEFAULT_REVEALED_COLOR		(RGB(220, 220, 220))
+#define RED_COLOR					(RGB(255, 0, 0))
+#define GREEN_COLOR					(RGB(0, 255, 0))
+#define BLUE_COLOR					(RGB(0, 0, 255))
+#define YELLOW_COLOR				(RGB(255, 255, 0))
+#define TURQUOISE_COLOR				(RGB(0, 255, 255))
+#define VIOLET_COLOR				(RGB(255, 0, 255))
+#define ORANGE_COLOR				(RGB(255, 128, 0))
+#define BLACK_COLOR					(RGB(0, 0, 0))

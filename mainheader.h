@@ -6,13 +6,12 @@
 
 //----------------------------------------------------------------
 // Preprocessor Settings
-#define RANDOM_NEW_GAME
+//#define RANDOM_NEW_GAME
 //#define THREAD_SAFE_RANDOM
 
 //----------------------------------------------------------------
 // Global Variables
 HINSTANCE hInst;                                // current instance
-HINSTANCE hChildInst;
 HINSTANCE hDialogInst;
 HWND g_hWnd;
 HWND g_hWndDialog;

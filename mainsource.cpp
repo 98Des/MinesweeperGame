@@ -441,14 +441,14 @@ BOOL CreateNewChildrenWindows(HWND**& childptr, HWND parentptr, INT width, INT h
             childptr[i][j] = CreateWindowW(
                 _T("ChildWindow"),
                 nullptr,
-                WS_BORDER | WS_CHILD | BS_DEFPUSHBUTTON | WS_TABSTOP,
+                WS_BORDER | WS_CHILD | BS_DEFPUSHBUTTON | WS_TABSTOP ,
                 (j + 1) * boxdist + j * (boxsize),
-                (i + 1) * boxdist + i * (boxsize)+title,
+                (i + 1) * boxdist + i * (boxsize) + title,
                 boxsize,
                 boxsize,
                 parentptr,
                 nullptr,
-                hChildInst,
+                nullptr,
                 nullptr);
 
             if (!childptr[i][j]) return FALSE;
@@ -751,7 +751,7 @@ void DrawFlag(HWND hWnd)
     HBITMAP oldBitmap = (HBITMAP)SelectObject(memDC, bitmap);
     BITMAP bmInfo;
     GetObject(bitmap, sizeof(bmInfo), &bmInfo);
-    BitBlt(hdc, 0, 0, 20, 20, memDC, 0, 0, SRCCOPY);
+    BitBlt(hdc, 0, 0, iBoxSize, iBoxSize, memDC, 0, 0, SRCCOPY);
     StretchBlt(hdc, 0, 0, iBoxSize, iBoxSize, memDC, 0, 0, bmInfo.bmWidth, bmInfo.bmHeight, SRCCOPY);
     SelectObject(memDC, oldBitmap);
     DeleteObject(bitmap);
