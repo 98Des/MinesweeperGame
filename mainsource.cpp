@@ -64,7 +64,7 @@ ATOM RegisterMainClass(HINSTANCE hInstance)
     wcex.hInstance = hInstance;
     wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDC_WINAPI22S4LCPPPWSG));
     wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wcex.hbrBackground = reinterpret_cast<HBRUSH>((COLOR_WINDOW + 1));
     wcex.lpszMenuName = MAKEINTRESOURCEW(IDC_WINAPI22S4LCPPPWSG);
     wcex.lpszClassName = szWindowClass;
     wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
@@ -97,11 +97,11 @@ ATOM RegisterDialogClass(HINSTANCE hInstance)
 
     wcex.cbSize = sizeof(WNDCLASSEX);
 
-    wcex.hbrBackground = (HBRUSH)COLOR_WINDOW;
+    wcex.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW);
     wcex.hCursor = LoadCursor(nullptr, IDC_CROSS);
     wcex.hInstance = hInstance;
     wcex.lpszClassName = _T("DialogWindow");
-    wcex.lpfnWndProc = (WNDPROC)WndProcDialog;
+    wcex.lpfnWndProc = static_cast<WNDPROC>(WndProcDialog);
 
     return RegisterClassExW(&wcex);
 }
@@ -233,10 +233,10 @@ LRESULT CALLBACK WndProcChild(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 	    {
 			if (bGameUpdateInProcess || bGameStopped) return TRUE;
 
-			int i = (int)GetProp(hWnd, I_INDEX),
-    			j = (int)GetProp(hWnd, J_INDEX);
+			int i = reinterpret_cast<int>(GetProp(hWnd, I_INDEX));
+			int j = reinterpret_cast<int>(GetProp(hWnd, J_INDEX));
 
-            if(g_ptTiles[i][j].status != FLAG && iCurrentFlagCount > 0 && !g_ptTiles[i][j].revealed)
+			if(g_ptTiles[i][j].status != FLAG && iCurrentFlagCount > 0 && !g_ptTiles[i][j].revealed)
             {
                 UpdateFlagText(g_hWnd, --iCurrentFlagCount);
 
@@ -346,17 +346,17 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
+        return TRUE;
 
     case WM_COMMAND:
         if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
         {
             EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
+            return TRUE;
         }
         break;
     }
-    return (INT_PTR)FALSE;
+    return FALSE;
 }
 
 
@@ -471,9 +471,9 @@ BOOL CreateNewChildrenWindows(HWND**& childptr, HWND parentptr, INT width, INT h
 
     return FALSE;
 }
-BOOL CreateNewDialogWindow(HINSTANCE hInst, HWND hWnd)
+BOOL CreateNewDialogWindow(HINSTANCE hInstance, HWND hWnd)
 {
-    if (!(g_hWndDialog = CreateDialog(hInst, MAKEINTRESOURCE(IDD_DIALOG1), hWnd, WndProcDialog)))
+    if (!(g_hWndDialog = CreateDialog(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), hWnd, WndProcDialog)))
         return FALSE;
 
     SetDlgItemText(g_hWndDialog, IDC_STATIC1, _T("Width:"));
@@ -497,10 +497,11 @@ BOOL CreateNewTileSet(Tile**& tiles, INT width, INT height)
 
         for (int j = 0; j < width; j++)
             tiles[i][j] = { NUMBER, false, false,  false, 0 };
-}
+	}
 
 
-    std::list<POINT> lBombCoordinates;
+    //std::list<POINT> lBombCoordinates;
+    std::list<std::pair<int, int>> lBombCoordinates;
     int Bombs = iBombCount;
     while (Bombs > 0)
     {
@@ -511,7 +512,7 @@ BOOL CreateNewTileSet(Tile**& tiles, INT width, INT height)
         {
             // the bomb has been planted
             tiles[i][j].is_bomb = true;
-            lBombCoordinates.push_back({ i, j });
+            lBombCoordinates.emplace_back(i, j);
             Bombs--;
         }
     }
@@ -519,11 +520,11 @@ BOOL CreateNewTileSet(Tile**& tiles, INT width, INT height)
     while (!lBombCoordinates.empty())
         //for (auto& coor : lBombCoordinates) // x = i, y = j
     {
-        POINT coor = lBombCoordinates.back();
+        auto coor = lBombCoordinates.back();
         lBombCoordinates.pop_back();
 
-        int i = coor.x;
-        int j = coor.y;
+        int i = coor.first;
+        int j = coor.second;
 
         if (i > 0 && j > 0)
             tiles[i - 1][j - 1].value++;
@@ -564,7 +565,7 @@ void WriteTextOnScreen(HWND hWnd)
 {
     HDC hdc = GetDC(hWnd);
 
-    tagRECT lprRect;
+    tagRECT lprRect{};
     GetClientRect(hWnd, &lprRect);
 
     auto hFont = ARIAL_BOLD_FONT(25);
@@ -592,7 +593,7 @@ void UpdateFlagText(HWND hWnd, INT newFlagCount)
 
     HDC hdc = GetDC(hWnd);
 
-    tagRECT lprRect;
+    tagRECT lprRect{};
     GetClientRect(hWnd, &lprRect);
 
     auto hFont = ARIAL_BOLD_FONT(25);
@@ -736,7 +737,7 @@ void PaintBackground(HWND hWnd, INT color)
     RECT rc;
     GetClientRect(hWnd, &rc);
     HBRUSH brush = CreateSolidBrush(color);
-    HBRUSH oldBrush = (HBRUSH)SelectObject(hdc, brush);
+    HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(hdc, brush));
 
     Rectangle(hdc, iActualDistBetweenBoxes - 2, iActualDistBetweenBoxes - 2, rc.right - rc.left + iActualDistBetweenBoxes, rc.bottom - rc.top + iActualDistBetweenBoxes);
     SelectObject(hdc, oldBrush);
@@ -748,7 +749,7 @@ void DrawFlag(HWND hWnd)
     HDC hdc = GetDC(hWnd);
     HBITMAP bitmap = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP1));
     HDC memDC = CreateCompatibleDC(hdc);
-    HBITMAP oldBitmap = (HBITMAP)SelectObject(memDC, bitmap);
+    HBITMAP oldBitmap = static_cast<HBITMAP>(SelectObject(memDC, bitmap));
     BITMAP bmInfo;
     GetObject(bitmap, sizeof(bmInfo), &bmInfo);
     BitBlt(hdc, 0, 0, iBoxSize, iBoxSize, memDC, 0, 0, SRCCOPY);
@@ -763,7 +764,7 @@ void SeizeFlag(HWND hWnd)
     RECT rc;
     GetClientRect(hWnd, &rc);
     HBRUSH brush = CreateSolidBrush(DEFAULT_UNREVEALED_COLOR);
-    HBRUSH oldBrush = (HBRUSH)SelectObject(hdc, brush);
+    HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(hdc, brush));
     Rectangle(hdc, iActualDistBetweenBoxes - 2, iActualDistBetweenBoxes - 2, rc.right - rc.left + iActualDistBetweenBoxes, rc.bottom - rc.top + iActualDistBetweenBoxes);
     SelectObject(hdc, oldBrush);
     DeleteObject(brush);
@@ -771,14 +772,14 @@ void SeizeFlag(HWND hWnd)
 }
 void DrawBomb(HWND hWnd)
 {
-    if (g_ptTiles[(int)GetProp(hWnd, _T("index_i"))][(int)GetProp(hWnd, _T("index_j"))].revealed)
+    if (g_ptTiles[reinterpret_cast<int>(GetProp(hWnd, I_INDEX))][reinterpret_cast<int>(GetProp(hWnd, J_INDEX))].revealed)
         PaintBackground(hWnd, DEFAULT_REVEALED_COLOR);
     else
         PaintBackground(hWnd, DEFAULT_UNREVEALED_COLOR);
 
     HDC hdc = GetDC(hWnd);
     HPEN hPenOld, hPen = CreatePen(PS_SOLID, iBoxSize * 4 / 5, BLACK_COLOR);
-    hPenOld = (HPEN)SelectObject(hdc, hPen);
+    hPenOld = static_cast<HPEN>(SelectObject(hdc, hPen));
 
     MoveToEx(hdc, iBoxSize / 2 - 1, iBoxSize / 2 - 1, nullptr);
     LineTo(hdc, iBoxSize / 2 - 1, iBoxSize / 2 - 1);
@@ -865,10 +866,12 @@ void NewGame(INT width, INT height, BOOL random)
 void GameWon(HWND hWnd, INT_PTR timerId)
 {
     KillTimer(hWnd, timerId);
-    if (iCurrentFlagCount > 0)
-        ::MessageBox(hWnd, _T("All mines have been found."), _T("You won!"), MB_OK);
-    else
-        ::MessageBox(hWnd, _T("All mines have been defused."), _T("You won!"), MB_OK);
+
+    ::MessageBox(
+        hWnd, iCurrentFlagCount > 0 ? _T("All mines have been found.") : _T("All mines have been defused."), 
+        _T("You won!"), 
+        MB_OK);
+
     bGameStopped = true;
     bTimerStarted = false;
 }

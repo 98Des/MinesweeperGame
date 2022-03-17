@@ -6,8 +6,9 @@
 #define I_INDEX						(_T("INDEXI"))
 #define J_INDEX						(_T("INDEXJ"))
 
-#define DEFAULT_UNREVEALED_COLOR	(RGB(200, 200, 200))
+#define DEFAULT_UNREVEALED_COLOR	/*COLOR_GRAYTEXT*/(RGB(200, 200, 200))
 #define DEFAULT_REVEALED_COLOR		(RGB(220, 220, 220))
+
 #define RED_COLOR					(RGB(255, 0, 0))
 #define GREEN_COLOR					(RGB(0, 255, 0))
 #define BLUE_COLOR					(RGB(0, 0, 255))
